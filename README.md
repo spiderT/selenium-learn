@@ -726,3 +726,301 @@ await alert.sendKeys("Selenium");
 //Press the OK button
 await alert.accept();
 ```
+
+## 7. http 代理
+
+捕获网络流量  
+模拟网站后端响应  
+在复杂的网络拓扑结构或严格的公司限制/政策下访问目标站点.  
+
+```js
+let webdriver = require("selenium-webdriver");
+let chrome = require("selenium-webdriver/chrome");
+let proxy = require("selenium-webdriver/proxy");
+let opts = new chrome.Options();
+
+(async function example() {
+  opts.setProxy(proxy.manual({ http: "<HOST:PORT>" }));
+  let driver = new webdriver.Builder()
+    .forBrowser("chrome")
+    .setChromeOptions(opts)
+    .build();
+  try {
+    await driver.get("https://selenium.dev");
+  } finally {
+    await driver.quit();
+  }
+})();
+```
+
+## 8. 页面加载策略
+
+当Selenium WebDriver加载页面时, 遵循 normal 的页面加载策略. 始终建议您在页面加载缓慢时, 停止下载其他资源 (例如图片, css, js) .  
+
+### 8.1. normal
+
+设置为 normal 时, Selenium WebDriver将保持等待, 直到 返回 load 事件  
+
+默认情况下, 如果未设置页面加载策略, 则设置 normal 为初始策略.
+
+```js
+const {Builder, Capabilities} = require('selenium-webdriver');
+const caps = new Capabilities();
+caps.setPageLoadStrategy("normal");
+```
+
+### 8.2. eager
+
+这将使Selenium WebDriver保持等待, 直到完全加载并解析了HTML文档, 该策略无关样式表, 图片和subframes的加载.  
+
+设置为 eager 时, Selenium WebDriver保持等待, 直至返回 DOMContentLoaded 事件.  
+
+```js
+const {Builder, Capabilities} = require('selenium-webdriver');
+const caps = new Capabilities();
+caps.setPageLoadStrategy("eager");
+```
+
+### 8.3. none
+
+设置为 none 时, Selenium WebDriver仅等待至初始页面下载完成.
+
+```js
+const {Builder, Capabilities} = require('selenium-webdriver');
+const caps = new Capabilities();
+caps.setPageLoadStrategy("none");
+```
+
+## 9. Keyboard
+
+demo路径demo/demo6.js
+
+Keyboard代表一个键盘事件. Keyboard操作通过使用底层接口允许我们向web浏览器提供虚拟设备输入
+
+### 9.1. sendKeys
+
+键盘事件：https://www.w3.org/TR/webdriver/#keyboard-actions  
+
+```js
+const webdriver = require("selenium-webdriver"),
+  By = webdriver.By;
+  Key = webdriver.Key;
+const driver = await new webdriver.Builder().forBrowser("chrome").build();
+await driver.get("https://www.baidu.com");
+// await driver.findElement(By.id("kw")).sendKeys("selenium");
+// await driver.findElement(By.id("su")).click();
+
+// 同样功能
+// Enter text and perform keyboard action "Enter"
+await driver.findElement(By.id("kw")).sendKeys('selenium', Key.ENTER);
+```
+
+### 9.2. keyDown
+
+keyDown用于模拟按下辅助按键(CONTROL, SHIFT, ALT)的动作.
+
+```js
+// Perform action ctrl + A (modifier CONTROL + Alphabet A) to select the page
+await driver.actions().keyDown(Key.CONTROL).sendKeys('a').perform();
+
+// mac command
+await driver.actions().keyDown(Key.COMMAND).sendKeys('a').perform();
+```
+
+### 9.3. keyUp
+
+keyUp用于模拟辅助按键(CONTROL, SHIFT, ALT)弹起或释放的操作.  
+
+```js
+// Enters text "selenium" with keyDown SHIFT key and after keyUp SHIFT key 
+const search = driver.findElement(By.id('kw'));
+await driver
+  .actions()
+  .click(search)
+  .keyDown(Key.SHIFT)
+  .sendKeys("selenium")
+  // .keyUp(Key.SHIFT)
+  // .sendKeys("selenium")
+  .perform();
+```
+
+### 9.4. clear
+
+清除可编辑元素的内容. 这仅适用于可编辑且可交互的元素, 否则Selenium将返回错误(无效的元素状态或元素不可交互).  
+
+```js
+// Store 'SearchInput' element
+const searchInput = driver.findElement(By.id('kw'));
+await searchInput.sendKeys("selenium");
+// Clears the entered text
+await searchInput.clear();
+```
+
+## 10. 鼠标动作
+
+demo路径demo/demo7.js
+
+### 10.1. clickAndHold
+
+它将移动到该元素，然后在给定元素的中间单击(不释放).  
+
+```js
+let searchBtn = driver.findElement(By.id("su"));
+const actions = driver.actions({ async: true });
+// Perform mouseMove to element and mouseDown (press) action on the element
+await actions.move({ origin: searchBtn }).press().perform();
+```
+
+### 10.2. contextClick
+
+首先将鼠标移动到元素的位置, 然后在给定元素执行上下文点击(右键单击).
+
+```js
+// Perform context-click action on the element
+await actions.contextClick(searchBtn).perform();
+```
+
+### 10.3. doubleClick
+
+移动到该元素, 并在给定元素的中间双击.
+
+```js
+// Perform double-click action on the element
+await actions.doubleClick(searchBtn).perform();
+```
+
+### 10.4. moveToElement
+
+将鼠标移到元素的中间. 执行此操作时, 该元素也会滚动到视图中.
+
+```js
+const baiduLink = driver.findElement(By.linkText("帮助"));
+
+// Performs mouse move action onto the element
+await actions.move({ origin: baiduLink }).perform();
+```
+
+### 10.5. moveByOffset
+
+将鼠标从其当前位置(或0,0)移动给定的偏移量. 如果坐标在视图窗口之外, 则鼠标最终将在浏览器窗口之外.
+
+```js
+let offset = await searchBtn.getRect();
+let x = await offset.x;
+let y = await offset.y;
+// Performs mouse move action onto the element
+await actions
+  .move({ x: parseInt(x), y: parseInt(y) })
+  .pause(3000)
+  .perform();
+```
+
+### 10.6. dragAndDrop
+
+在源元素上单击并按住，然后移动到目标元素的位置后释放鼠标.
+
+```js
+await driver.get("https://crossbrowsertesting.github.io/drag-and-drop");
+// Store 'box A' as source element
+let sourceEle = driver.findElement(By.id("draggable"));
+// Store 'box B' as source element
+let targetEle = driver.findElement(By.id("droppable"));
+const actions = driver.actions({ async: true });
+// Performs drag and drop action of sourceEle onto the targetEle
+await actions.dragAndDrop(sourceEle, targetEle).perform();
+```
+
+### 10.7. dragAndDropBy
+
+在源元素上单击并按住, 移至给定的偏移量后释放鼠标.  
+
+```js
+await actions
+  .dragAndDrop(sourceEle, { x: parseInt(x), y: parseInt(y) })
+  .perform();
+```
+
+### 10.8. release
+
+将释放按下的鼠标左键. 如果WebElement转移了, 它将释放给定WebElement上按下的鼠标左键.  
+
+```js
+// Performs release event on target element
+await actions.move({origin:targetEle}).release().perform();
+```
+
+## 11. Cookie
+
+demo 路径见 demos/demo8.js
+
+Cookies主要用于识别用户并加载存储的信息.
+
+### 11.1. 添加 Cookie
+
+将cookie添加到当前访问的上下文中
+
+```js
+await driver.get("https://www.baidu.com");
+// set a cookie on the current domain
+await driver.manage().addCookie({ name: "key", value: "value" });
+})();
+```
+
+### 11.2. 获取命名的 Cookie
+
+返回与cookie名称匹配的序列化cookie数据中所有关联的cookie.
+
+```js
+ // Get cookie details with named cookie 'foo'
+driver
+  .manage()
+  .getCookie("key")
+  .then(function (cookie) {
+    console.log("cookie details => ", cookie);
+  });
+```
+
+### 11.3. 获取全部 Cookies
+
+针对当前访问上下文返回“成功的序列化cookie数据”. 如果浏览器不再可用, 则返回错误.
+
+```js
+// Get all Available cookies
+driver
+  .manage()
+  .getCookies()
+  .then(function (cookies) {
+    console.log("cookie details => ", cookies);
+  });
+```
+
+### 11.4. 删除 Cookie
+
+删除与提供的cookie名称匹配的cookie数据.
+
+```js
+// Delete a cookie with name 'test1'
+await driver.manage().deleteCookie('test1');
+```
+
+### 11.5. 删除所有 Cookies
+
+删除当前访问上下文的所有cookie.
+
+```js
+// Delete all cookies
+await driver.manage().deleteAllCookies();
+```
+
+### 11.6. Same-Site Cookie属性
+
+Strict: 当sameSite属性设置为 Strict, cookie不会与来自第三方网站的请求一起发送.  
+
+Lax: 当您将cookie sameSite属性设置为 Lax, cookie将与第三方网站发起的GET请求一起发送.  
+
+```js
+// set a cookie on the current domain with sameSite 'Strict' (or) 'Lax'
+await driver.manage().addCookie({name:'key', value: 'value', sameSite:'Strict'});
+await driver.manage().addCookie({name:'key', value: 'value', sameSite:'Lax'});
+console.log(await driver.manage().getCookie('key'));
+```
